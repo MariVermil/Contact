@@ -59,6 +59,53 @@ def to_file(cur_contacts, filename):
             file.write(to_write.get_string() + '\n')
 
 
+def check_contact(cur_contact, flags):
+    pos = 0
+    try:
+        while pos < len(flags):
+            if flags[pos] == '-phone':
+                if flags[pos + 1] != cur_contact.phone_number:
+                    return False
+                pos += 2
+            elif flags[pos] == '-email':
+                if flags[pos + 1] != cur_contact.email_address:
+                    return False
+                pos += 2
+            elif flags[pos] == '-surname':
+                if flags[pos + 1] != cur_contact.surname:
+                    return False
+                pos += 2
+            elif flags[pos] == '-name':
+                if flags[pos + 1] != cur_contact.name:
+                    return False
+                pos += 2
+            elif flags[pos] == '-patronymic':
+                if flags[pos + 1] != cur_contact.patronymic:
+                    return False
+                pos += 2
+            elif flags[pos] == '-no_phone':
+                if cur_contact.phone_number != '':
+                    return False
+                pos += 1
+            elif flags[pos] == '-no_email':
+                if cur_contact.email_address != '':
+                    return False
+                pos += 1
+            else:
+                pos += 1
+    except IndexError:
+        return False
+    return True
+
+
+def search_contacts(cur_contacts, flags):
+    res = []
+    for cur_contact in cur_contacts:
+        if check_contact(cur_contact, flags):
+            res.append(cur_contact)
+    return res
+
+
 def print_contacts(cur_contacts):
     print('Results:\n')
     for to_print in cur_contacts:
@@ -98,6 +145,17 @@ def check_email_address(email_address):
 
 contacts = []
 
+print('Utility usage:')
+print('exit -- exit the program.')
+print('load <filename> -- load contacts list from the specified file.')
+print('save <filename> -- save contacts list to the specified file.')
+print('list [-phone phone] [-email email] [-surname surname] [-name name] [-patronymic patronymic] '
+      '[-no_phone] [-no_email] -- list all the loaded contacts with specified data')
+print('edit <surname/name/patronymic/phone/email> <contact ID> <new data> -- edit the specified contact.')
+print('add <contact data> -- add a new contact with the specified data (with the same format as in files).')
+print('remove <contact ID> -- remove the specified contact.')
+print()
+
 while True:
     command = ' '.join(filter(None, input().split(' '))).split(' ')
     if command[0] == 'exit':
@@ -116,32 +174,8 @@ while True:
             to_file(contacts, command[1])
             print('Contacts have been saved to', command[1])
 
-    if command[0] == 'search':
-        res = []
-        if len(command) == 3 and command[1] in ['phone', 'email']:
-            for contact in contacts:
-                if command[1] == 'phone' and contact.phone_number == command[2] or \
-                        command[1] == 'email' and contact.email_address == command[2]:
-                    res.append(contact)
-
-        if len(command) == 2 and command[1] in ['no_phone', 'no_email', 'no_phone_email']:
-            for contact in contacts:
-                if command[1] == 'no_phone' and contact.phone_number == '' or \
-                        command[1] == 'no_email' and contact.email_address == '' or \
-                        command[1] == 'no_phone_email' and contact.phone_number == '' and contact.email_address == '':
-                    res.append(contact)
-
-        if 3 <= len(command) <= 5 and command[1] == 'name':
-            name = ' '.join(command[2:])
-            for contact in contacts:
-                temp = contact.get_name()
-                if contact.get_name() == name:
-                    res.append(contact)
-
-        print_contacts(contacts)
-
-    if command[0] == 'list' and len(command) == 1:
-        print_contacts(contacts)
+    if command[0] == 'list':
+        print_contacts(search_contacts(contacts, command[1:]))
 
     if command[0] == 'edit' and len(command) == 4:
         contact_id = -1
